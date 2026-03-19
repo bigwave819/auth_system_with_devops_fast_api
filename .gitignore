@@ -1,0 +1,14 @@
+# Virtual Environment
+myenv/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Dependencies
+requirements.txt
