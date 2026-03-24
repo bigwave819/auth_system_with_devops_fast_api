@@ -5,6 +5,7 @@ from auth_database import get_db
 from jose import jwt
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError
 
 SECRET_KEY = "bLXolj5Vlv-FFNFABHeEnQ15cu4L-qV80_kzSG3RzfI"
 ALGORITHM = "SH256"
@@ -64,3 +65,47 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db:Session = De
     token_data = { "sub": user.username, "role": user.role }
     token = create_access_token(token_data)
     return { "access_token": token, "token_type": "bearer" }
+
+
+oauth2_schema = OAuth2PasswordRequestForm(token_url="login")
+def get_the_current_user(token: str = Depends(oauth2_schema)):
+    credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate the Credential")
+    headers=({"WW-authenicate": "Bearer"})
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+        username: str = payload.get("sub")
+        role: str = payload.get("role")
+        if username is None or role is None:
+            raise credential_exception
+        
+    except JWTError:
+        raise credential_exception
+    
+    return { "username": username, "role": role }
+
+@app.get("/protected")
+def protected_route(current_user: dict = Depends(get_the_current_user)):
+    return { "message": f"Hello, {current_user['username']} | you access the protected Route" }
+
+
+def require_role(allowed_roles: list[str]):
+    def role_checker(current_user: dict = Depends(get_the_current_user)):
+        user_role = current_user.get("role")
+        if user_role not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permission")
+        
+        return current_user
+    return role_checker
+
+@app.get("/profile")
+def profile(current_user: dict = Depends(require_role(["user", "admin"]))):
+    return { "message": f"profile of {current_user['username']} ({current_user['role']})" }
+
+@app.get('/user/dashboard')
+def user_dashboard(current_user: dict = Depends(require_role(['user']))):
+    return { "Message": "Welcome User" }
+
+@app.get('/admin/dashboard')
+def admin_dashboard(current_user: dict = Depends(require_role(['admin']))):
+    return { "Messages": 'Welcome Admin' }
