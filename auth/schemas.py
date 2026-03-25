@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr
 # schema for new user create
 class UserCreate(BaseModel):
     username: str
-    name: EmailStr
+    email: EmailStr
     password: str
     role: str
 

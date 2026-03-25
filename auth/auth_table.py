@@ -1,4 +1,4 @@
 from auth_database import base, engine
-import model
+import models
 
-base.metadata.create_all(bind=engine)
+base.metadata.create_all(bind=engine) 

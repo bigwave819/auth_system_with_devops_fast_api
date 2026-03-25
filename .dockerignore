@@ -1,0 +1,5 @@
+__pydantic__
+*.pyc
+*.pyo
+venv
+.env
